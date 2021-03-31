@@ -1,11 +1,20 @@
 import pyspark
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import to_timestamp, col, lower, regexp_replace, hour, sum
+from pyspark.sql.functions import (
+    to_timestamp,
+    col,
+    lower,
+    regexp_replace,
+    hour,
+    sum,
+    explode,
+)
 from pyspark.ml.feature import Tokenizer, StopWordsRemover
 
 
 def clean_text(text):
     text = lower(text)
+    # html attributes
     # text = regexp_replace(text, "@[A-Za-z0-9_]+", "")
     text = regexp_replace(text, "^rt ", "")
     text = regexp_replace(text, "(https?\://)\S+", "")
@@ -19,8 +28,10 @@ def sum_col(df, col):
 
 
 if __name__ == "__main__":
-    file_path = "/home/m/CS3800/twitter-sentiment-tool/data/training.1600000.processed.noemoticon.csv"
-    # file_path = "/home/m/CS3800/twitter-sentiment-tool/data/testdata.manual.2009.06.14.csv"
+    # file_path = "/home/m/CS3800/twitter-sentiment-tool/data/training.1600000.processed.noemoticon.csv"
+    file_path = (
+        "/home/m/CS3800/twitter-sentiment-tool/data/testdata.manual.2009.06.14.csv"
+    )
 
     spark = (
         SparkSession.builder.master("local[*]")
@@ -65,17 +76,42 @@ if __name__ == "__main__":
 
     tweets_with_tokens_df = scaled_polarity_df.join(vector_no_stopw_df, on=["tweet_id"])
 
-    tweets_with_tokens_df.show(10)
-    tweets_with_tokens_df.printSchema()
-
     # 1. In: hour, Out: sentiment shift at hour
-    tweets_at_hour_df = tweets_with_tokens_df.where(hour(col("timestamp")) == 1)
+    input_hour = 1
+    tweets_at_hour_df = tweets_with_tokens_df.where(
+        hour(col("timestamp")) == input_hour
+    )
     print(
-        "Sentiment bias at 1 o'clock: ",
+        f"Average sentiment bias from {input_hour}:00 to {input_hour}:59 : ",
         sum_col(tweets_at_hour_df, "sentiment") / tweets_at_hour_df.count(),
     )
 
+    # Create dataframe where each word has a sentiment value
+    words_exploded_df = tweets_with_tokens_df.select(
+        "sentiment", explode("tokens").alias("word")
+    )
+
+    counts_df = words_exploded_df.groupBy("word").count()
+
+    sentiments_df = words_exploded_df.groupBy("word").agg(
+        sum("sentiment").alias("total_sentiment")
+    )
+
+    words_df = counts_df.join(sentiments_df, on=["word"])
+
+    words_df.show()
+
     # 3. In: sentiment, Out: words with sentiment
+    # input_sentiment = "positive"
+    # if(input_sentiment == "positive"):
+
+    # elif(input_sentiment = "negative"):
+
+    # elif(input_sentiment = "neutral"):
+
+    # else:
+    # Invalid input
+
     # 4. In: word, Out: sentiment
     # 6. In: sentiment, Out: users with sentiment
 
