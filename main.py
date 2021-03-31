@@ -1,6 +1,6 @@
 import pyspark
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import to_timestamp, col, lower, regexp_replace, split
+from pyspark.sql.functions import to_timestamp, col, lower, regexp_replace, hour, sum
 from pyspark.ml.feature import Tokenizer, StopWordsRemover
 
 def clean_text(text):
@@ -12,9 +12,12 @@ def clean_text(text):
   text = regexp_replace(text, "\s\s+", " ")
   return text
 
+def sum_col(df, col):
+    return df.select(sum(col)).collect()[0][0]
+
 if __name__ == "__main__":
-    # file_path = "/home/m/CS3800/twitter-sentiment-tool/data/training.1600000.processed.noemoticon.csv"
-    file_path = "/home/m/CS3800/twitter-sentiment-tool/data/testdata.manual.2009.06.14.csv"
+    file_path = "/home/m/CS3800/twitter-sentiment-tool/data/training.1600000.processed.noemoticon.csv"
+    # file_path = "/home/m/CS3800/twitter-sentiment-tool/data/testdata.manual.2009.06.14.csv"
 
     spark = SparkSession.builder.master("local[*]").appName("Twitter Sentiment Tool").getOrCreate()
 
@@ -31,6 +34,9 @@ if __name__ == "__main__":
 
     df3 = df2.drop("query").drop("datetime")
 
+    # Shift polarity from a range of [0:4], to [-1:1]
+    scaled_polarity_df = df3.withColumn("sentiment", (col("polarity")/2) - 1).drop("polarity")
+
     clean_text_df = df3.select(clean_text(col("text")).alias("text"), "tweet_id")
 
     tokenizer = Tokenizer(inputCol="text", outputCol="vector")
@@ -44,11 +50,15 @@ if __name__ == "__main__":
 
     vector_no_stopw_df = remover.transform(vector_df).select("tokens", "tweet_id")
 
-    tweets_with_tokens_df = df3.join(vector_no_stopw_df, on=['tweet_id'])
+    tweets_with_tokens_df = scaled_polarity_df.join(vector_no_stopw_df, on=['tweet_id'])
 
     tweets_with_tokens_df.show(10)
+    tweets_with_tokens_df.printSchema()
 
     # 1. In: hour, Out: sentiment shift at hour
+    tweets_at_hour_df  = tweets_with_tokens_df.where(hour(col("timestamp")) == 1)
+    print("Sentiment bias at 1 o'clock: ", sum_col(tweets_at_hour_df,'sentiment')/tweets_at_hour_df.count())
+
     # 3. In: sentiment, Out: words with sentiment
     # 4. In: word, Out: sentiment
     # 6. In: sentiment, Out: users with sentiment
