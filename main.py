@@ -1,27 +1,22 @@
 import pyspark
 from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StringType, IntegerType, LongType
+from pyspark.sql.functions import to_timestamp
 
 if __name__ == "__main__":
     spark = SparkSession.builder.master("local[*]").appName("Twitter Sentiment Tool").getOrCreate()
 
-    schema = StructType() \
-        .add("polarity", IntegerType(), True) \
-        .add("tweet_id", LongType(), True) \
-        .add("date", StringType(), True) \
-        .add("query", StringType(), True) \
-        .add("user", StringType(), True) \
-        .add("text", StringType(), True)
-
-    # .schema(schema) \
+    # Have to set legacy parsing as Spark 3.0+ cannot use 'E'
+    spark.sql("set spark.sql.legacy.timeParserPolicy=LEGACY")
 
     df = spark.read.format("csv") \
         .option("inferSchema", True) \
         .load("/home/m/CS3800/twitter-sentiment-tool/data/training.1600000.processed.noemoticon.csv") \
         .toDF("polarity","tweet_id","datetime","query","user","text")
 
-    df2 = df.drop("query")
+    df2 = df.withColumn('timestamp',to_timestamp("datetime", "EEE MMM dd HH:mm:ss zzz yyyy"))
 
-    df2.printSchema()
+    df3 = df2.drop("query").drop("datetime")
 
-    df2.show(10)
+    df3.printSchema()
+
+    df3.show(10)
