@@ -5,11 +5,17 @@ from pyspark.sql.functions import (
     col,
     lower,
     regexp_replace,
-    hour,
+    hour as to_hour,
     sum,
     explode,
 )
 from pyspark.ml.feature import Tokenizer, StopWordsRemover
+import click
+
+# default_file_path = "/home/m/CS3800/twitter-sentiment-tool/data/training.1600000.processed.noemoticon.csv"
+default_file_path = (
+    "/home/m/CS3800/twitter-sentiment-tool/data/testdata.manual.2009.06.14.csv"
+)
 
 # TODO: Swap clean and tokenise processes
 def clean_text(text):
@@ -28,12 +34,7 @@ def sum_col(df, col):
     return df.select(sum(col)).collect()[0][0]
 
 
-def init_base_df():
-    # file_path = "/home/m/CS3800/twitter-sentiment-tool/data/training.1600000.processed.noemoticon.csv"
-    file_path = (
-        "/home/m/CS3800/twitter-sentiment-tool/data/testdata.manual.2009.06.14.csv"
-    )
-
+def init_base_df(file_path=default_file_path):
     spark = (
         SparkSession.builder.master("local[*]")
         .appName("Twitter Sentiment Tool")
@@ -80,18 +81,9 @@ def init_base_df():
     return tweets_with_tokens_df
 
 
-# 1. In: hour, Out: sentiment shift at hour
-def sentiment_at_hour(base_df, input_hour):
-    tweets_at_hour_df = tweets.where(hour(col("timestamp")) == input_hour)
-    print(
-        f"Average sentiment bias from {input_hour}:00 to {input_hour}:59 : ",
-        sum_col(tweets_at_hour_df, "sentiment") / tweets_at_hour_df.count(),
-    )
-
-
 def init_word_sentiments_df(base_df):
     # Create dataframe where each word has a sentiment value
-    words_exploded_df = tweets.select("sentiment", explode("tokens").alias("word"))
+    words_exploded_df = base_df.select("sentiment", explode("tokens").alias("word"))
 
     counts_df = words_exploded_df.groupBy("word").count()
 
@@ -104,26 +96,46 @@ def init_word_sentiments_df(base_df):
     return words_df
 
 
+@click.group()
+def cli():
+    """ Usage info."""
+    print("Loading file...")
+    global base_df
+    base_df = init_base_df()
+    pass
+
+
+# Input: hour, Output: sentiment shift at hour
+@cli.command()
+@click.argument("hour", default=1, type=int)
+def sentiment_at_hour(hour):
+    tweets_at_hour_df = base_df.where(to_hour(col("timestamp")) == hour)
+    print(
+        f"Average sentiment bias from {hour}:00 to {hour}:59 : ",
+        sum_col(tweets_at_hour_df, "sentiment") / tweets_at_hour_df.count(),
+    )
+
+
+# Input: word, Output: avg sentiment of word
+@cli.command()
+@click.argument("word", type=str)
+def sentiment_of_word(word):
+    word_sentiments_df = init_word_sentiments_df(base_df)
+    rows = word_sentiments_df.where(word_sentiments_df.word == word).collect()
+    if rows:
+        row = rows[0]
+        freq = row["count"]
+        sentiment = row["total_sentiment"] / freq
+        print(f"Average sentiment for {word} : ", sentiment, f" (samples = {freq})")
+    else:
+        print("Word not found in dataframe.")
+
+
 if __name__ == "__main__":
+    cli()
 
-    tweets = init_base_df()
-
-    in_hour = 1
-    sentiment_at_hour(tweets, in_hour)
-
-    word_sentiments_df = init_word_sentiments_df(tweets)
-    word_sentiments_df.show()
-
-    # 3. In: sentiment, Out: words with sentiment
-    # input_sentiment = "positive"
-    # if(input_sentiment == "positive"):
-
-    # elif(input_sentiment = "negative"):
-
-    # elif(input_sentiment = "neutral"):
-
-    # else:
-    # Invalid input
+    # word_sentiments_df = init_word_sentiments_df(tweets)
+    # word_sentiments_df.show()
 
     # 4. In: word, Out: sentiment
     # 6. In: sentiment, Out: users with sentiment
