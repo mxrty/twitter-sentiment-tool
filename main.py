@@ -11,7 +11,7 @@ from pyspark.sql.functions import (
 )
 from pyspark.ml.feature import Tokenizer, StopWordsRemover
 
-
+# TODO: Swap clean and tokenise processes
 def clean_text(text):
     text = lower(text)
     # html attributes
@@ -20,6 +20,7 @@ def clean_text(text):
     text = regexp_replace(text, "(https?\://)\S+", "")
     text = regexp_replace(text, "[^a-zA-Z0-9\\s]", "")
     text = regexp_replace(text, "\s\s+", " ")
+    # text = text.strip()
     return text
 
 
@@ -27,7 +28,7 @@ def sum_col(df, col):
     return df.select(sum(col)).collect()[0][0]
 
 
-if __name__ == "__main__":
+def init_base_df():
     # file_path = "/home/m/CS3800/twitter-sentiment-tool/data/training.1600000.processed.noemoticon.csv"
     file_path = (
         "/home/m/CS3800/twitter-sentiment-tool/data/testdata.manual.2009.06.14.csv"
@@ -76,20 +77,21 @@ if __name__ == "__main__":
 
     tweets_with_tokens_df = scaled_polarity_df.join(vector_no_stopw_df, on=["tweet_id"])
 
-    # 1. In: hour, Out: sentiment shift at hour
-    input_hour = 1
-    tweets_at_hour_df = tweets_with_tokens_df.where(
-        hour(col("timestamp")) == input_hour
-    )
+    return tweets_with_tokens_df
+
+
+# 1. In: hour, Out: sentiment shift at hour
+def sentiment_at_hour(base_df, input_hour):
+    tweets_at_hour_df = tweets.where(hour(col("timestamp")) == input_hour)
     print(
         f"Average sentiment bias from {input_hour}:00 to {input_hour}:59 : ",
         sum_col(tweets_at_hour_df, "sentiment") / tweets_at_hour_df.count(),
     )
 
+
+def init_word_sentiments_df(base_df):
     # Create dataframe where each word has a sentiment value
-    words_exploded_df = tweets_with_tokens_df.select(
-        "sentiment", explode("tokens").alias("word")
-    )
+    words_exploded_df = tweets.select("sentiment", explode("tokens").alias("word"))
 
     counts_df = words_exploded_df.groupBy("word").count()
 
@@ -99,7 +101,18 @@ if __name__ == "__main__":
 
     words_df = counts_df.join(sentiments_df, on=["word"])
 
-    words_df.show()
+    return words_df
+
+
+if __name__ == "__main__":
+
+    tweets = init_base_df()
+
+    in_hour = 1
+    sentiment_at_hour(tweets, in_hour)
+
+    word_sentiments_df = init_word_sentiments_df(tweets)
+    word_sentiments_df.show()
 
     # 3. In: sentiment, Out: words with sentiment
     # input_sentiment = "positive"
@@ -114,6 +127,7 @@ if __name__ == "__main__":
 
     # 4. In: word, Out: sentiment
     # 6. In: sentiment, Out: users with sentiment
+    # 7. In: sentence (word[]), Out: sentiment for each word
 
     # 2. In: text (140 char), Out: sentiment
     # 5. In: text (140 char), Out: similair tweets and their sentiments
