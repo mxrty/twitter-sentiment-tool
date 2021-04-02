@@ -1,15 +1,10 @@
 import click
-from jobs.init_dfs import init_base_df, init_word_sentiments_df
-
-if __name__ == "__main__":
-    cli()
-    # 6. In: sentiment, Out: users with sentiment
-    # 7. In: sentence (word[]), Out: sentiment for each word
-
-    # 2. In: text (140 char), Out: sentiment
-    # 5. In: text (140 char), Out: similar tweets and their sentiments
+from jobs.init_dfs import init_base_df, init_word_sentiments_df, init_user_sentiments_df
+import pyspark
+from pyspark.sql.functions import col
 
 
+# Command Line Interface entry point
 @click.group()
 def cli():
     """ Usage info."""
@@ -39,14 +34,44 @@ def sentiment_of_word(word):
     if rows:
         row = rows[0]
         freq = row["count"]
-        sentiment = row["total_sentiment"] / freq
-        print(f"Average sentiment for {word} : ", sentiment, f" (samples = {freq})")
+        sentiment = row["avg_sentiment"]
+        print(f"Average sentiment for '{word}' : ", sentiment, f" (samples = {freq})")
     else:
-        print("Word not found in dataframe.")
+        print(f"Word '{word}'' not found in dataframe.")
 
 
 # Input: user, Output: avg sentiment of user's tweets
 @cli.command()
 @click.argument("user", type=str)
 def sentiment_of_user(user):
-    base_df.groupBy("user").count().orderBy("count").show()
+    user_sentiments_df = init_user_sentiments_df(base_df)
+    rows = user_sentiments_df.where(user_sentiments_df.user == user).collect()
+    if rows:
+        row = rows[0]
+        freq = row["count"]
+        sentiment = row["avg_sentiment"] / freq
+        print(f"Average sentiment for '{user}' : ", sentiment, f" (samples = {freq})")
+    else:
+        print(f"User '{user}' not found in dataframe.")
+
+
+# Input: sentiment, min occurrences, max words to return, Output: words with specified sentiment
+@cli.command()
+@click.option("--positive/--negative", default=True)
+@click.option("--min-samples", type=int, default=2)
+@click.option("--max", type=int, default=20)
+def words_by_sentiment(positive, min_samples, max):
+    word_sentiments_df = init_word_sentiments_df(base_df)
+    filtered_word_sentiments_df = word_sentiments_df.where(col("count") >= min_samples)
+    filtered_word_sentiments_df.orderBy(
+        ["avg_sentiment", "word"], ascending=not positive
+    ).show(max)
+
+
+if __name__ == "__main__":
+    cli()
+    # 6. In: sentiment, Out: users with sentiment
+    # 7. In: sentence (word[]), Out: sentiment for each word
+
+    # 2. In: text (140 char), Out: sentiment
+    # 5. In: text (140 char), Out: similar tweets and their sentiments

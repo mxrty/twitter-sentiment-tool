@@ -16,6 +16,7 @@ default_file_path = (
     "/home/m/CS3800/twitter-sentiment-tool/data/testdata.manual.2009.06.14.csv"
 )
 
+
 # TODO: Swap clean and tokenise processes
 def clean_text(text):
     text = lower(text)
@@ -90,6 +91,16 @@ def init_word_sentiments_df(base_df):
         sum("sentiment").alias("total_sentiment")
     )
 
-    words_df = counts_df.join(sentiments_df, on=["word"])
+    return counts_df.join(sentiments_df, on=["word"]).withColumn(
+        "avg_sentiment", col("total_sentiment") / col("count")
+    )
 
-    return words_df
+
+def init_user_sentiments_df(base_df):
+    user_tweet_counts_df = base_df.select("user").groupBy("user").count()
+
+    sentiments_df = base_df.groupBy("user").agg(
+        sum("sentiment").alias("total_sentiment")
+    )
+
+    return user_tweet_counts_df.join(sentiments_df, on=["user"])
