@@ -10,14 +10,37 @@ from pyspark.sql.functions import (
     explode,
 )
 from pyspark.ml.feature import Tokenizer, StopWordsRemover
+from pyspark.sql.types import (
+    StructType,
+    StructField,
+    StringType,
+    LongType,
+    DoubleType,
+    BooleanType,
+)
 
 # default_file_path = "/home/m/CS3800/twitter-sentiment-tool/data/training.1600000.processed.noemoticon.csv"
+# Smaller file to use when testing
 default_file_path = (
     "/home/m/CS3800/twitter-sentiment-tool/data/testdata.manual.2009.06.14.csv"
 )
 
+spark = (
+    SparkSession.builder.master("local[*]")
+    .appName("Twitter Sentiment Tool")
+    .getOrCreate()
+)
 
-# TODO: Swap clean and tokenise processes
+tweet_schema = StructType(
+    [
+        StructField("word", StringType(), True),
+        StructField("found", BooleanType(), True),
+        StructField("avg_sentiment", DoubleType(), True),
+        StructField("count", LongType(), True),
+    ]
+)
+
+
 def clean_text(text):
     text = lower(text)
     # html attributes
@@ -30,21 +53,17 @@ def clean_text(text):
     return text
 
 
+# Sum all values in a column
 def sum_col(df, col):
     return df.select(sum(col)).collect()[0][0]
 
 
+# Create dataframe from csv
 def init_base_df(file_path=default_file_path):
-    spark = (
-        SparkSession.builder.master("local[*]")
-        .appName("Twitter Sentiment Tool")
-        .getOrCreate()
-    )
-
     # Set legacy parsing as Spark 3.0+ cannot use 'E' for timestamp
     spark.sql("set spark.sql.legacy.timeParserPolicy=LEGACY")
 
-    df = (
+    raw_df = (
         spark.read.format("csv")
         .option("inferSchema", True)
         .load(file_path)
@@ -52,18 +71,18 @@ def init_base_df(file_path=default_file_path):
     )
 
     # Parse string to timestamp
-    df2 = df.withColumn(
+    time_parsed_df = raw_df.withColumn(
         "timestamp", to_timestamp("datetime", "EEE MMM dd HH:mm:ss zzz yyyy")
     )
 
-    df3 = df2.drop("query").drop("datetime")
+    df = time_parsed_df.drop("query").drop("datetime")
 
     # Shift polarity from a range of [0:4], to [-1:1]
-    scaled_polarity_df = df3.withColumn("sentiment", (col("polarity") / 2) - 1).drop(
+    scaled_polarity_df = df.withColumn("sentiment", (col("polarity") / 2) - 1).drop(
         "polarity"
     )
 
-    clean_text_df = df3.select(clean_text(col("text")).alias("text"), "tweet_id")
+    clean_text_df = df.select(clean_text(col("text")).alias("text"), "tweet_id")
 
     tokenizer = Tokenizer(inputCol="text", outputCol="vector")
     vector_df = tokenizer.transform(clean_text_df).select("vector", "tweet_id")
@@ -74,14 +93,14 @@ def init_base_df(file_path=default_file_path):
     remover.setInputCol("vector")
     remover.setOutputCol("tokens")
 
-    vector_no_stopw_df = remover.transform(vector_df).select("tokens", "tweet_id")
+    tokens_no_stopw_df = remover.transform(vector_df).select("tokens", "tweet_id")
 
-    tweets_with_tokens_df = scaled_polarity_df.join(vector_no_stopw_df, on=["tweet_id"])
+    tweets_with_tokens_df = scaled_polarity_df.join(tokens_no_stopw_df, on=["tweet_id"])
 
     return tweets_with_tokens_df
 
 
-# Create dataframe where each word has a sentiment value
+# Create dataframe with each words average sentiment value
 def init_word_sentiments_df(base_df):
     words_exploded_df = base_df.select("sentiment", explode("tokens").alias("word"))
 
@@ -96,6 +115,7 @@ def init_word_sentiments_df(base_df):
     )
 
 
+# Create dataframe with each users average sentiment value
 def init_user_sentiments_df(base_df):
     user_tweet_counts_df = base_df.select("user").groupBy("user").count()
 
@@ -103,4 +123,20 @@ def init_user_sentiments_df(base_df):
         sum("sentiment").alias("total_sentiment")
     )
 
-    return user_tweet_counts_df.join(sentiments_df, on=["user"])
+    return user_tweet_counts_df.join(sentiments_df, on=["user"]).withColumn(
+        "avg_sentiment", col("total_sentiment") / col("count")
+    )
+
+
+def init_tweet_row(word=None, found=None, avg_sentiment=None, count=None):
+    row_data = []
+    # If no method arguments create empty row (header)
+    if (
+        word is not None
+        and found is not None
+        and avg_sentiment is not None
+        and count is not None
+    ):
+        row_tuple = (word, found, avg_sentiment, count)
+        row_data.append(row_tuple)
+    return spark.createDataFrame(row_data, tweet_schema)
