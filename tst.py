@@ -4,9 +4,10 @@ from jobs.init_dataframes import (
     init_word_sentiments_df,
     init_user_sentiments_df,
     init_tweet_row,
+    sum_col,
 )
 import pyspark
-from pyspark.sql.functions import col
+from pyspark.sql.functions import col, hour as to_hour
 
 
 # Command Line Interface entry point
@@ -24,10 +25,8 @@ def cli():
 @click.argument("hour", default=1, type=int)
 def sentiment_at_hour(hour):
     tweets_at_hour_df = base_df.where(to_hour(col("timestamp")) == hour)
-    print(
-        f"Average sentiment bias from {hour}:00 to {hour}:59 : ",
-        sum_col(tweets_at_hour_df, "sentiment") / tweets_at_hour_df.count(),
-    )
+    avg_sentiment = sum_col(tweets_at_hour_df, "sentiment") / tweets_at_hour_df.count()
+    print(f"Average sentiment bias from {hour}:00 to {hour}:59 : {avg_sentiment}")
 
 
 # Input: word, Output: avg sentiment of word
@@ -68,6 +67,7 @@ def sentiment_of_user(user):
 def words_by_sentiment(positive, min_samples, max):
     word_sentiments_df = init_word_sentiments_df(base_df)
     filtered_word_sentiments_df = word_sentiments_df.where(col("count") >= min_samples)
+
     filtered_word_sentiments_df.orderBy(
         ["avg_sentiment", "word"], ascending=not positive
     ).show(max)
@@ -81,6 +81,7 @@ def words_by_sentiment(positive, min_samples, max):
 def users_by_sentiment(positive, min_samples, max):
     user_sentiments_df = init_user_sentiments_df(base_df)
     filtered_user_sentiments_df = user_sentiments_df.where(col("count") >= min_samples)
+
     filtered_user_sentiments_df.orderBy(
         ["avg_sentiment", "user"], ascending=not positive
     ).show(max)
