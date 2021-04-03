@@ -13,35 +13,35 @@ These need to be installed on your machine (and create system PATH variables):
 
 [Install pip](https://linuxize.com/post/how-to-install-pip-on-ubuntu-20.04/)
 
-### `pip3 install pipenv`
+#### `pip3 install pipenv`
 
 or 
 
-### `pip install pipenv`
+#### `pip install pipenv`
 
 Clone repository:
 
-### `git clone https://github.com/mxrty/twitter-sentiment-tool.git`
+#### `git clone https://github.com/mxrty/twitter-sentiment-tool.git`
 
-### `pipenv install`
+#### `pipenv install`
 
-### `pipenv shell`
+#### `pipenv shell`
 
 ## Usage
-### `spark-submit tst.py COMMAND [--ARGS] <INPUT>`
+#### `spark-submit tst.py COMMAND [--ARGS] <INPUT>`
 
 ### Commands
-### `spark-submit tst.py sentiment-at-hour <hour>` 
+#### `spark-submit tst.py sentiment-at-hour <hour>` 
 
-### `spark-submit tst.py sentiment-of-word <word>`
+#### `spark-submit tst.py sentiment-of-word <word>`
 
-### `spark-submit tst.py sentiment-of-user <username>`
+#### `spark-submit tst.py sentiment-of-user <username>`
 
-### `spark-submit tst.py words-by-sentiment [--positive|--negative] [--min-samples] <min>=2 [--max] <max>=20`
+#### `spark-submit tst.py words-by-sentiment [--positive|--negative] [--min-samples] <min>=2 [--max] <max>=20`
 
-### `spark-submit tst.py users-by-sentiment [--positive|--negative] [--min-samples] <min>=2 [--max] <max>=20`
+#### `spark-submit tst.py users-by-sentiment [--positive|--negative] [--min-samples] <min>=2 [--max] <max>=20`
 
-###`spark-submit tst.py sentiment-of-tweet "<tweet>"`
+#### `spark-submit tst.py sentiment-of-tweet "<tweet>"`
 ### Data
 The data used for this project is called Sentiment140 and was produced by Stanford University. You can [download it](http://help.sentiment140.com/for-students/) and unzip it into the `/data` folder.
 
