@@ -3,7 +3,7 @@ A project built using Apache Spark's python library - PySpark\
 Uses the [Sentiment140 dataset](http://help.sentiment140.com/for-students/)\
 Can be operated using CLI built with Click
 
-Developed and tested on Linux (Ubuntu 20.04)
+**Developed and tested on Linux (Ubuntu 20.04)**
 
 ## Installation
 ### Prerequisites:
