@@ -37,7 +37,7 @@ Run virtual-env shell:
 #### `pipenv shell`
 
 ## Usage
-
+*Make sure you are in a pipenv shell before running commands*
 #### `spark-submit tst.py COMMAND [--ARGS] <INPUT>`
 
 ### Commands
