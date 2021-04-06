@@ -45,22 +45,22 @@ sentiment-at-hour :
 Input an hour of the day (0 - 23) and recieve the sentiment bias at this hour.
 #### `spark-submit tst.py sentiment-at-hour <hour>`
 ---
+sentiment-of-tweet : Input a string with a max of 140 characters, this will be parsed and the average sentiment of each word (if found in the data) will be returned.
+#### `spark-submit tst.py sentiment-of-tweet "<tweet>"`
+---
 sentiment-of-word :
 Input a word and if it exists in the data (and is not a [stop word](http://ir.dcs.gla.ac.uk/resources/linguistic_utils/stop_words)), return the average sentiment for this word
 #### `spark-submit tst.py sentiment-of-word <word>`
+---
+words-by-sentiment : Returns a list of words with the most positive/negative sentiments. The default is positive but you can get the most negative words with the `--negative` option. You can specify the minimum amount of occurences for a word to be returned with the --`min-samples` option. You can also specify the number of words to return with the `-max` option. 
+#### `spark-submit tst.py words-by-sentiment [--positive|--negative] [--min-samples] <min>=2 [--max] <max>=20`
 ---
 sentiment-of-user :
 Input a twitter username and if it exists in the data, return the average sentiment of this user's tweets
 #### `spark-submit tst.py sentiment-of-user <username>`
 ---
-words-by-sentiment : Returns a list of words with the most positive/negative sentiments. The default is positive but you can get the most negative words with the `--negative` option. You can specify the minimum amount of occurences for a word to be returned with the --`min-samples` option. You can also specify the number of words to return with the `-max` option. 
-#### `spark-submit tst.py words-by-sentiment [--positive|--negative] [--min-samples] <min>=2 [--max] <max>=20`
----
 users-by-sentiment : Returns a list of users with the most positive/negative sentiments. The default is positive but you can get the most negative users with the `--negative` option. You can specify the minimum amount of tweets a user must have to be returned, with the --`min-samples` option. You can also specify the number of users to return with the `-max` option. 
 #### `spark-submit tst.py users-by-sentiment [--positive|--negative] [--min-samples] <min>=2 [--max] <max>=20`
----
-sentiment-of-tweet : Input a string with a max of 140 characters, this will be parsed and the average sentiment of each word (if found in the data) will be returned.
-#### `spark-submit tst.py sentiment-of-tweet "<tweet>"`
 
 ### Data
 
