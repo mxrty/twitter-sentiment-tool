@@ -7,13 +7,15 @@ from jobs.init_dataframes import (
     sum_col,
 )
 import pyspark
-from pyspark.sql.functions import col, hour as to_hour
+from pyspark.sql.functions import col, hour as to_hour, lower
 
 
 # Command Line Interface entry point
 @click.group()
 def cli():
-    """ Usage info."""
+    """
+    spark-submit tst.py COMMAND [--ARGS] <INPUT>
+    """
     print("Loading file...")
     global base_df
     base_df = init_base_df()
@@ -69,7 +71,7 @@ def words_by_sentiment(positive, min_samples, max):
     filtered_word_sentiments_df = word_sentiments_df.where(col("count") >= min_samples)
 
     filtered_word_sentiments_df.orderBy(
-        ["avg_sentiment", "word"], ascending=not positive
+        ["avg_sentiment", "count", "word"], ascending=not positive
     ).show(max)
 
 
@@ -83,7 +85,7 @@ def users_by_sentiment(positive, min_samples, max):
     filtered_user_sentiments_df = user_sentiments_df.where(col("count") >= min_samples)
 
     filtered_user_sentiments_df.orderBy(
-        ["avg_sentiment", "user"], ascending=not positive
+        ["avg_sentiment", "count", "user"], ascending=not positive
     ).show(max)
 
 

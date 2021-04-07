@@ -5,7 +5,6 @@ from pyspark.sql.functions import (
     col,
     lower,
     regexp_replace,
-    hour as to_hour,
     sum,
     explode,
 )
@@ -19,11 +18,12 @@ from pyspark.sql.types import (
     BooleanType,
 )
 
-# default_file_path = "/home/m/CS3800/twitter-sentiment-tool/data/training.1600000.processed.noemoticon.csv"
-# Smaller file to use when testing
-default_file_path = (
-    "/home/m/CS3800/twitter-sentiment-tool/data/testdata.manual.2009.06.14.csv"
-)
+# Full file (1.6M rows)
+default_file_path = "/home/m/CS3800/twitter-sentiment-tool/data/training.1600000.processed.noemoticon.csv"
+
+# Smaller file (500 rows) to use when testing
+# default_file_path = "/home/m/CS3800/twitter-sentiment-tool/data/testdata.manual.2009.06.14.csv"
+
 
 spark = (
     SparkSession.builder.master("local[*]")
@@ -43,13 +43,10 @@ tweet_schema = StructType(
 
 def clean_text(text):
     text = lower(text)
-    # html attributes
-    # text = regexp_replace(text, "@[A-Za-z0-9_]+", "")
     text = regexp_replace(text, "^rt ", "")
     text = regexp_replace(text, "(https?\://)\S+", "")
     text = regexp_replace(text, "[^a-zA-Z0-9\\s]", "")
     text = regexp_replace(text, "\s\s+", " ")
-    # text = text.strip()
     return text
 
 
