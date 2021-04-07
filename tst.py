@@ -16,7 +16,6 @@ def cli():
     """
     spark-submit tst.py COMMAND [--ARGS] <INPUT>
     """
-    print("Loading file...")
     global base_df
     base_df = init_base_df()
     pass
