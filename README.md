@@ -40,7 +40,7 @@ or
 
 *This repository contains a 500 line file which will work by default, but does not contain the full dataset as this is over GitHub's 100MB limit.*
 
-Download Sentiment140 dataset and unzip into the `/data` folder. Then go into `jobs/init_dataframes.py` and uncomment line 22 and comment out lines 25-27.
+Download Sentiment140 dataset and unzip into the `/data` folder. Then go into `/jobs/init_dataframes.py` and uncomment line 22 and comment out lines 25-27.
 
 ## Usage
 *Make sure you are in a pipenv shell before running commands*
