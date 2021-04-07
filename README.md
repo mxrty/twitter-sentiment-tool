@@ -16,7 +16,7 @@ Then, [install pip](https://linuxize.com/post/how-to-install-pip-on-ubuntu-20.04
 
 ### Steps:
 
-1. Install pipenv:
+1\. Install pipenv:
 
 #### `pip3 install pipenv`
 
@@ -24,19 +24,19 @@ or
 
 #### `pip install pipenv`
 
-2. Clone repository:
+2\. Clone repository:
 
 #### `git clone https://github.com/mxrty/twitter-sentiment-tool.git`
 
-3. Install packages:
+3\. Install packages:
 
 #### `pipenv install`
 
-4. Run virtual-env shell:
+4\. Run virtual-env shell:
 
 #### `pipenv shell`
 
-5. Set up full Sentiment140 dataset *(Optional)* :
+5\. Set up full Sentiment140 dataset *(Optional)* :
 
 *This repository contains a 500 line file which will work by default, but does not contain the full dataset as this is over 100MB.*
 
