@@ -58,14 +58,14 @@ sentiment-of-word :
 Input a word and if it exists in the data (and is not a [stop word](http://ir.dcs.gla.ac.uk/resources/linguistic_utils/stop_words)), return the average sentiment for this word (sentiment in the range of -1.0 (most negative) to 1.0 (most positive)).
 #### `spark-submit tst.py sentiment-of-word <word>`
 ---
-words-by-sentiment : Returns a list of words with the most positive/negative sentiments (sentiment in the range of -1.0 (most negative) to 1.0 (most positive)). The default is positive but you can get the most negative words with the `--negative` option. You can specify the minimum amount of occurences for a word to be returned with the --`min-samples` option. You can also specify the number of words to return with the `-max` option. 
+words-by-sentiment : Returns a list of words with the most positive/negative sentiments (sentiment in the range of -1.0 (most negative) to 1.0 (most positive)). The default is positive but you can get the most negative words with the `--negative` option. You can specify the minimum amount of occurences for a word to be returned with the `--min-samples` option. You can also specify the number of words to return with the `-max` option. 
 #### `spark-submit tst.py words-by-sentiment [--positive|--negative] [--min-samples] <min>=2 [--max] <max>=20`
 ---
 sentiment-of-user :
 Input a twitter username and if it exists in the data, return the average sentiment of this user's tweets (sentiment in the range of -1.0 (most negative) to 1.0 (most positive)).
 #### `spark-submit tst.py sentiment-of-user <username>`
 ---
-users-by-sentiment : Returns a list of users with the most positive/negative sentiments (sentiment in the range of -1.0 (most negative) to 1.0 (most positive)). The default is positive but you can get the most negative users with the `--negative` option. You can specify the minimum amount of tweets a user must have to be returned, with the --`min-samples` option. You can also specify the number of users to return with the `-max` option. 
+users-by-sentiment : Returns a list of users with the most positive/negative sentiments (sentiment in the range of -1.0 (most negative) to 1.0 (most positive)). The default is positive but you can get the most negative users with the `--negative` option. You can specify the minimum amount of tweets a user must have to be returned, with the `--min-samples` option. You can also specify the number of users to return with the `-max` option. 
 #### `spark-submit tst.py users-by-sentiment [--positive|--negative] [--min-samples] <min>=2 [--max] <max>=20`
 
 ### Data
