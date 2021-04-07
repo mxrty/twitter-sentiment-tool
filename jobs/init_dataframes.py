@@ -18,13 +18,11 @@ from pyspark.sql.types import (
     BooleanType,
 )
 
-# Full file (1.6M rows)
-# default_file_path = "/home/m/CS3800/twitter-sentiment-tool/data/training.1600000.processed.noemoticon.csv"
-
 # Smaller file (500 rows) to use when testing
-default_file_path = (
-    "/home/m/CS3800/twitter-sentiment-tool/data/testdata.manual.2009.06.14.csv"
-)
+default_file_path = "data/testdata.manual.2009.06.14.csv"
+
+# Full file (1.6M rows)
+# default_file_path = "data/training.1600000.processed.noemoticon.csv"
 
 
 spark = (
@@ -62,7 +60,7 @@ def init_base_df(file_path=default_file_path):
     # Set legacy parsing as Spark 3.0+ cannot use 'E' for timestamp
     spark.sql("set spark.sql.legacy.timeParserPolicy=LEGACY")
 
-    print("Loading file located at ", default_file_path)
+    print("Loading", default_file_path)
 
     raw_df = (
         spark.read.format("csv")
